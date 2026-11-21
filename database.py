@@ -10,6 +10,11 @@ engine = create_engine(sqlite_url, echo=True, connect_args=connect_args)
 
 
 def create_db_and_tables():
+    from models.links import LibroAutor  
+    from models.autor import Autor  
+    from models.libro import Libro  
+    from models.socio import Socio  
+    from models.prestamo import Prestamo  
     SQLModel.metadata.create_all(engine)
 
 
