@@ -27,3 +27,17 @@ class LibroUpdate(SQLModel):
     isbn: str | None = Field(default=None, min_length=1)
     stock: int | None = Field(default=None, ge=0)
     anio: int | None = None
+
+class AutorSimple(SQLModel):
+    id: int
+    nombre: str
+    nacionalidad: str
+
+
+class LibroConAutores(SQLModel):
+    id: int
+    titulo: str
+    isbn: str
+    stock: int
+    anio: int
+    autores: list[AutorSimple] = []

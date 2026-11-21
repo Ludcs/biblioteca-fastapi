@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, status
 from sqlmodel import select
 
 from database import SessionDep
-from models.libro import Libro, LibroCreate, LibroUpdate
+from models.autor import Autor
+from models.libro import Libro, LibroConAutores, LibroCreate, LibroUpdate
 
 router = APIRouter(prefix="/libros", tags=["Libros"])
 
@@ -78,3 +79,27 @@ def delete_libro(libro_id: int, session: SessionDep):
 
     session.delete(libro)
     session.commit()
+
+@router.post("/{libro_id}/autores/{autor_id}", response_model=LibroConAutores, status_code=status.HTTP_201_CREATED)
+def add_autor_to_libro(libro_id: int, autor_id: int, session: SessionDep):
+    libro = session.get(Libro, libro_id)
+    if not libro:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Libro no encontrado",
+        )
+
+    autor = session.get(Autor, autor_id)
+    if not autor:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Autor no encontrado",
+        )
+
+    if autor not in libro.autores:
+        libro.autores.append(autor)
+        session.add(libro)
+        session.commit()
+        session.refresh(libro)
+
+    return libro
