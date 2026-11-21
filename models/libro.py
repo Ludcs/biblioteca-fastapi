@@ -17,3 +17,13 @@ class Libro(SQLModel, table=True):
 
     autores: list["Autor"] = Relationship(back_populates="libros", link_model=LibroAutor)
     prestamos: list["Prestamo"] = Relationship(back_populates="libro")
+class LibroCreate(SQLModel):
+    titulo: str = Field(min_length=1)
+    isbn: str = Field(min_length=1)
+    stock: int = Field(default=0, ge=0)
+    anio: int
+class LibroUpdate(SQLModel):
+    titulo: str | None = Field(default=None, min_length=1)
+    isbn: str | None = Field(default=None, min_length=1)
+    stock: int | None = Field(default=None, ge=0)
+    anio: int | None = None
