@@ -18,3 +18,14 @@ class Prestamo(SQLModel, table=True):
 
     socio: "Socio" = Relationship(back_populates="prestamos")
     libro: "Libro" = Relationship(back_populates="prestamos")
+class PrestamoCreate(SQLModel):
+    socio_id: int
+    libro_id: int
+class PrestamoRead(SQLModel):
+    id: int
+    socio_id: int
+    libro_id: int
+    fecha_prestamo: date
+    fecha_vencimiento: date
+    fecha_devolucion: date | None
+    multa: float

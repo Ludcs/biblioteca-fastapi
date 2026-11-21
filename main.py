@@ -4,6 +4,7 @@ from database import create_db_and_tables
 from routers.autores import router as autores_router
 from routers.socios import router as socios_router
 from routers.libros import router as libros_router
+from routers.prestamos import router as prestamos_router
 
 
 @asynccontextmanager
@@ -16,6 +17,7 @@ app = FastAPI(title="API Biblioteca - Programación 4", lifespan=lifespan)
 app.include_router(autores_router)
 app.include_router(socios_router)
 app.include_router(libros_router)
+app.include_router(prestamos_router)
 
 @app.get("/")
 def root():

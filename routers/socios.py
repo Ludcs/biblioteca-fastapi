@@ -3,6 +3,8 @@ from sqlmodel import select
 
 from database import SessionDep
 from models.socio import Socio, SocioCreate, SocioUpdate
+from models.prestamo import PrestamoRead
+from services.prestamos_service import obtener_prestamos_socio
 
 router = APIRouter(prefix="/socios", tags=["Socios"])
 
@@ -76,3 +78,9 @@ def delete_socio(socio_id: int, session: SessionDep):
 
     session.delete(socio)
     session.commit()
+
+@router.get("/{socio_id}/prestamos", response_model=list[PrestamoRead])
+def get_prestamos_de_socio(
+    socio_id: int, session: SessionDep, activos: bool | None = None
+):
+    return obtener_prestamos_socio(socio_id, session, activos=activos)
