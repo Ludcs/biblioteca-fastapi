@@ -5,11 +5,15 @@ from models.links import LibroAutor
 
 if TYPE_CHECKING:
     from models.libro import Libro
-
-
 class Autor(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     nombre: str = Field(min_length=1)
     nacionalidad: str = Field(min_length=1)
 
     libros: list["Libro"] = Relationship(back_populates="autores", link_model=LibroAutor)
+class AutorCreate(SQLModel):
+    nombre: str = Field(min_length=1)
+    nacionalidad: str = Field(min_length=1)
+class AutorUpdate(SQLModel):
+    nombre: str | None = Field(default=None, min_length=1)
+    nacionalidad: str | None = Field(default=None, min_length=1)
