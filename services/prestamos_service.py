@@ -1,24 +1,30 @@
 from datetime import date, timedelta
 from fastapi import HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from models.libro import Libro
 from models.prestamo import Prestamo, PrestamoCreate
-from models.socio import Socio
+from repositories.libro_repository import obtener_libro_por_id
+from repositories.prestamo_repository import (
+    contar_prestamos_activos_socio,
+    guardar_prestamo_y_stock,
+    listar_prestamos_socio,
+    obtener_prestamo_por_id,
+)
+from repositories.socio_repository import obtener_socio_por_id
 
 MONTO_MULTA_POR_DIA = 100.0
 PLAZO_DIAS = 14
 
 
 def crear_prestamo(data: PrestamoCreate, session: Session) -> Prestamo:
-    socio = session.get(Socio, data.socio_id)
+    socio = obtener_socio_por_id(session, data.socio_id)
     if not socio:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Socio no encontrado",
         )
 
-    libro = session.get(Libro, data.libro_id)
+    libro = obtener_libro_por_id(session, data.libro_id)
     if not libro:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -31,13 +37,8 @@ def crear_prestamo(data: PrestamoCreate, session: Session) -> Prestamo:
             detail="El socio está inactivo y no puede pedir préstamos",
         )
 
-    prestamos_activos = session.exec(
-        select(Prestamo).where(
-            Prestamo.socio_id == socio.id,
-            Prestamo.fecha_devolucion.is_(None),
-        )
-    ).all()
-    if len(prestamos_activos) >= 3:
+    cantidad_activos = contar_prestamos_activos_socio(session, socio.id)
+    if cantidad_activos >= 3:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="El socio ya tiene el máximo de 3 préstamos activos",
@@ -60,16 +61,11 @@ def crear_prestamo(data: PrestamoCreate, session: Session) -> Prestamo:
     )
 
     libro.stock -= 1
-
-    session.add(prestamo)
-    session.add(libro)
-    session.commit()
-    session.refresh(prestamo)
-    return prestamo
+    return guardar_prestamo_y_stock(session, prestamo, libro=libro)
 
 
 def devolver_prestamo(prestamo_id: int, session: Session) -> Prestamo:
-    prestamo = session.get(Prestamo, prestamo_id)
+    prestamo = obtener_prestamo_por_id(session, prestamo_id)
     if not prestamo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -88,29 +84,21 @@ def devolver_prestamo(prestamo_id: int, session: Session) -> Prestamo:
     dias_atraso = (hoy - prestamo.fecha_vencimiento).days
     prestamo.multa = dias_atraso * MONTO_MULTA_POR_DIA if dias_atraso > 0 else 0.0
 
-    libro = session.get(Libro, prestamo.libro_id)
+    libro = obtener_libro_por_id(session, prestamo.libro_id)
     if libro:
         libro.stock += 1
-        session.add(libro)
 
-    session.add(prestamo)
-    session.commit()
-    session.refresh(prestamo)
-    return prestamo
+    return guardar_prestamo_y_stock(session, prestamo, libro=libro)
 
 
 def obtener_prestamos_socio(
     socio_id: int, session: Session, activos: bool | None = None
 ) -> list[Prestamo]:
-    socio = session.get(Socio, socio_id)
+    socio = obtener_socio_por_id(session, socio_id)
     if not socio:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Socio no encontrado",
         )
 
-    query = select(Prestamo).where(Prestamo.socio_id == socio_id)
-    if activos is True:
-        query = query.where(Prestamo.fecha_devolucion.is_(None))
-
-    return session.exec(query).all()
+    return listar_prestamos_socio(session, socio_id, activos=activos)

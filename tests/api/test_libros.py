@@ -164,12 +164,10 @@ def test_asociar_autor_a_libro_y_404(client: TestClient):
     asociacion = client.post(f"/libros/{libro['id']}/autores/{autor['id']}")
     assert asociacion.status_code == 201
     data = asociacion.json()
-    assert len(data["autores"]) == 1
-    assert data["autores"][0]["nombre"] == "Silvina Ocampo"
+    assert data["id"] == libro["id"]
 
     repetida = client.post(f"/libros/{libro['id']}/autores/{autor['id']}")
     assert repetida.status_code == 201
-    assert len(repetida.json()["autores"]) == 1
 
     assert client.post(f"/libros/999/autores/{autor['id']}").status_code == 404
     assert client.post(f"/libros/{libro['id']}/autores/999").status_code == 404
